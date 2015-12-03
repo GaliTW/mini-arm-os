@@ -33,34 +33,34 @@ static void *sbrk(unsigned int nbytes)
 
 void *malloc(unsigned int nbytes)
 {
-    if (nbytes <= 0)
-        return NULL;
+	if (nbytes <= 0)
+		return NULL;
 	Header *p, *prevp;
 
 	unsigned int nunits = (nbytes - 1) / sizeof(Header) + 2;
 
-    if (freep == NULL) {
+	if (freep == NULL) {
 		base.s.ptr = freep = &base;
 		base.s.size = 0;
 	}
 
 	for (prevp = freep, p = freep->s.ptr; p != freep; prevp = p, p = p->s.ptr) {
-        if (p->s.size > nunits) {
-            p->s.size -= nunits;
-            p += p->s.size;
-            p->s.size = nunits;
-            return (void *)(p + 1);
-        }
+		if (p->s.size > nunits) {
+			p->s.size -= nunits;
+			p += p->s.size;
+			p->s.size = nunits;
+			return (void *)(p + 1);
+		}
 
-        if (p->s.size == nunits) {
-            prevp->s.ptr = p->s.ptr;
-            return (void *)(p + 1);
-        }
-    }
-   
+		if (p->s.size == nunits) {
+			prevp->s.ptr = p->s.ptr;
+			return (void *)(p + 1);
+		}
+	}
+
 	p = (Header *) sbrk(nunits * sizeof(Header));
-    if ((void *) p == (void *) -1)
-        return NULL;
+	if ((void *) p == (void *) - 1)
+		return NULL;
 
 	p->s.ptr = NULL;
 	p->s.size = nunits;
@@ -69,33 +69,33 @@ void *malloc(unsigned int nbytes)
 
 void free(void *ap)
 {
-    unsigned char insert = 1;
+	unsigned char insert = 1;
 	Header *p, *prevp;
 	Header *bp = (Header *) ap - 1;
-    if ((void *)bp < (void *)heaps || (void *)bp >= (void *)program_break)
-        return ;
+	if ((void *)bp < (void *)heaps || (void *)bp >= (void *)program_break)
+		return ;
 
-    for (prevp = freep, p = freep->s.ptr; p != freep; prevp = p, p = p->s.ptr) {
-        if (p > bp)
-            break;
-    }
+	for (prevp = freep, p = freep->s.ptr; p != freep; prevp = p, p = p->s.ptr) {
+		if (p > bp)
+			break;
+	}
 
-    if (bp + bp->s.size == p) {
-        bp->s.size += p->s.size;
-        bp->s.ptr = p->s.ptr;
-        prevp->s.ptr = bp;
-        insert = 0;
-    }
+	if (bp + bp->s.size == p) {
+		bp->s.size += p->s.size;
+		bp->s.ptr = p->s.ptr;
+		prevp->s.ptr = bp;
+		insert = 0;
+	}
 
-    if (prevp + prevp->s.size == bp) {
-        prevp->s.size += bp->s.size;
-        if (!insert)
-            prevp->s.ptr = bp->s.ptr;    
-        insert = 0;    
-    }
+	if (prevp + prevp->s.size == bp) {
+		prevp->s.size += bp->s.size;
+		if (!insert)
+			prevp->s.ptr = bp->s.ptr;
+		insert = 0;
+	}
 
-    if (insert) {
-        prevp->s.ptr = bp;
-        bp->s.ptr = p;
-    }
+	if (insert) {
+		prevp->s.ptr = bp;
+		bp->s.ptr = p;
+	}
 }

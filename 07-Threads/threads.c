@@ -27,7 +27,7 @@ void __attribute__((naked)) pendsv_handler()
 	asm volatile("mrs   r0, psp\n"
 	             "stmdb r0!, {r4-r11, lr}\n");
 	/* To get the task pointer address from result r0 */
-	asm volatile("mov   %0, r0\n" : "=r" (tasks[lastTask].stack));
+	asm volatile("mov   %0, r0\n" : "=r"(tasks[lastTask].stack));
 
 	/* Find a new task to run */
 	while (1) {
@@ -36,7 +36,7 @@ void __attribute__((naked)) pendsv_handler()
 			lastTask = 0;
 		if (tasks[lastTask].in_use) {
 			/* Move the task's stack pointer address into r0 */
-			asm volatile("mov r0, %0\n" : : "r" (tasks[lastTask].stack));
+			asm volatile("mov r0, %0\n" : : "r"(tasks[lastTask].stack));
 			/* Restore the new task's context and jump to the task */
 			asm volatile("ldmia r0!, {r4-r11, lr}\n"
 			             "msr psp, r0\n"
@@ -62,7 +62,7 @@ void thread_start()
 	 * move the task's stack pointer address into r0.
 	 * http://www.ethernut.de/en/documents/arm-inline-asm.html
 	 */
-	asm volatile("mov r0, %0\n" : : "r" (tasks[lastTask].stack));
+	asm volatile("mov r0, %0\n" : : "r"(tasks[lastTask].stack));
 	/* Load user task's context and jump to the task */
 	asm volatile("msr psp, r0\n"
 	             "mov r0, #3\n"
