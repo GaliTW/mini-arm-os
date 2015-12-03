@@ -3,6 +3,7 @@
 #include "os.h"
 #include "reg.h"
 #include "threads.h"
+#include "stdio.h"
 
 char usart2_rx_buffer[USART2_RX_BUFFER_SIZE];
 char *usart2_rx_start = usart2_rx_buffer_start;
@@ -40,6 +41,7 @@ void usart2_handler()
 		} else
 			str[1] = '\0';
 
+		puts(str);
 		*usart2_rx_start = c;
 		++usart2_rx_start;
 		if (usart2_rx_start == usart2_rx_buffer_end)
