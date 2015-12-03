@@ -3,6 +3,7 @@
 #include "os.h"
 #include "malloc.h"
 #include "reg.h"
+#include "string.h"
 
 #define THREAD_PSP	0xFFFFFFFD
 
@@ -10,6 +11,8 @@
 typedef struct {
 	void *stack;
 	void *orig_stack;
+	void *args;
+	void *argv;
 	uint8_t in_use;
 } tcb_t;
 
@@ -73,12 +76,21 @@ void thread_start()
 	             "bx lr\n");
 }
 
-int thread_create(void (*run)(void *), void *userdata)
+int thread_create(void (*run)(int, char *[]), char *name, void *userdata)
 {
-	/* Find a free thing */
 	int threadId = 0;
 	uint32_t *stack;
 
+	char *args = (char *)userdata;
+
+	int args_size = strlen(args) + 1;
+	int name_size = strlen(name) + 1;
+
+	int argc = 1;
+	char *args_buffer;
+	char **argv_buffer;
+
+	/* Find a free thing */
 	for (threadId = 0; threadId < MAX_TASKS; threadId++) {
 		if (tasks[threadId].in_use == 0)
 			break;
@@ -87,20 +99,35 @@ int thread_create(void (*run)(void *), void *userdata)
 	if (threadId == MAX_TASKS)
 		return -1;
 
-	/* Create the stack */
-	stack = (uint32_t *) malloc(STACK_SIZE * sizeof(uint32_t));
-	tasks[threadId].orig_stack = stack;
+	stack = (uint32_t *) malloc((STACK_SIZE) * sizeof(uint32_t) + (args_size + name_size) * sizeof(char) + 32 * sizeof(char *));
 	if (stack == 0)
 		return -1;
 
-	stack += STACK_SIZE - 32; /* End of stack, minus what we are about to push */
+	/* Create function arguments */
+	args_buffer = (char *)(stack + STACK_SIZE);
+	argv_buffer = (char **)(args_buffer + (args_size + name_size));
+
+	strcpy(args_buffer, name);
+	strcpy(args_buffer + name_size, args);
+	args = args_buffer + name_size;
+
+	argv_buffer[0] = args_buffer;
+	while (args != NULL && ((argv_buffer[argc] = strsep(&args, " ")) != NULL))
+		argc++;
+
+	/* Create the stack */
+	tasks[threadId].orig_stack = stack;
+
+	stack += STACK_SIZE - 17; /* End of stack, minus what we are about to push */
 	if (first) {
 		stack[8] = (unsigned int) run;
-		stack[9] = (unsigned int) userdata;
+		stack[9] = (unsigned int) argc;
+		stack[10] = (unsigned int) argv_buffer;
 		first = 0;
 	} else {
 		stack[8] = (unsigned int) THREAD_PSP;
-		stack[9] = (unsigned int) userdata;
+		stack[9] = (unsigned int) argc;
+		stack[10] = (unsigned int) argv_buffer;
 		stack[14] = (unsigned) &thread_self_terminal;
 		stack[15] = (unsigned int) run;
 		stack[16] = (unsigned int) 0x21000000; /* PSR Thumb bit */
@@ -108,6 +135,8 @@ int thread_create(void (*run)(void *), void *userdata)
 
 	/* Construct the control block */
 	tasks[threadId].stack = stack;
+	tasks[threadId].args = args_buffer;
+	tasks[threadId].argv = argv_buffer;
 	tasks[threadId].in_use = 1;
 
 	return threadId;
@@ -115,10 +144,10 @@ int thread_create(void (*run)(void *), void *userdata)
 
 void thread_kill(int thread_id)
 {
-	tasks[thread_id].in_use = 0;
-
 	/* Free the stack */
 	free(tasks[thread_id].orig_stack);
+
+	tasks[thread_id].in_use = 0;
 }
 
 void thread_self_terminal()

@@ -98,7 +98,7 @@ int main(void)
 {
 	usart_init();
 
-	if (thread_create(shell, "shell") == -1)
+	if (thread_create(shell, "shell", NULL) == -1)
 		puts("shell thread creation failed\r\n");
 
 	/* SysTick configuration */
