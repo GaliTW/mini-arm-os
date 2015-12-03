@@ -4,6 +4,7 @@
 #include "reg.h"
 #include "threads.h"
 #include "stdio.h"
+#include "malloc.h"
 
 char usart2_rx_buffer[USART2_RX_BUFFER_SIZE];
 char *usart2_rx_start = usart2_rx_buffer_start;
@@ -76,34 +77,15 @@ void print_str(const char *str)
 	}
 }
 
-static void delay(volatile int count)
+void shell()
 {
-	count *= 50000;
-	while (count--);
-}
-
-static void busy_loop(void *str)
-{
+	char *tempStr = (char *) malloc(1024 * sizeof(char));
 	while (1) {
-		print_str(str);
-		print_str(": Running...\n");
-		delay(1000);
+		puts("gali@gali-bed:/$ ");
+		getline(tempStr);
+		puts(tempStr);
 	}
-}
-
-void test1(void *userdata)
-{
-	busy_loop(userdata);
-}
-
-void test2(void *userdata)
-{
-	busy_loop(userdata);
-}
-
-void test3(void *userdata)
-{
-	busy_loop(userdata);
+	while (1);
 }
 
 /* 72MHz */
@@ -114,18 +96,10 @@ void test3(void *userdata)
 
 int main(void)
 {
-	const char *str1 = "Task1", *str2 = "Task2", *str3 = "Task3";
-
 	usart_init();
 
-	if (thread_create(test1, (void *) str1) == -1)
-		print_str("Thread 1 creation failed\r\n");
-
-	if (thread_create(test2, (void *) str2) == -1)
-		print_str("Thread 2 creation failed\r\n");
-
-	if (thread_create(test3, (void *) str3) == -1)
-		print_str("Thread 3 creation failed\r\n");
+	if (thread_create(shell, "shell") == -1)
+		puts("shell thread creation failed\r\n");
 
 	/* SysTick configuration */
 	*SYSTICK_LOAD = (CPU_CLOCK_HZ / TICK_RATE_HZ) - 1UL;
@@ -134,7 +108,9 @@ int main(void)
 
 	/* USART2 interrupt configuration */
 	*NVIC_ISER1 = 1 << 6 ;// USART2 = 38 = 31 + 7
+
 	thread_start();
 
+	while (1);
 	return 0;
 }
