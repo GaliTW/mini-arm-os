@@ -56,6 +56,17 @@ void usart2_handler()
 
 }
 
+void svc_handler(unsigned state, void *ptr)
+{
+	if (state == 1) {
+		char *str = (char *) ptr;
+		*str = *usart2_rx_end;
+		++usart2_rx_end;
+		if (usart2_rx_end == usart2_rx_buffer_end)
+			usart2_rx_end = usart2_rx_buffer_start;
+	}
+}
+
 void print_str(const char *str)
 {
 	while (*str) {
