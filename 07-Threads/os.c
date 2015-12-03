@@ -33,18 +33,16 @@ void usart_init(void)
 void usart2_handler()
 {
 	char str[3];
-	char c;
 	while (*(USART2_SR) & USART_FLAG_RXNE) {
-		c = str[0] = *USART2_DR & 0xff;
+		str[0] = *USART2_DR & 0xff;
 		if (str[0] == '\r') {
-			str[0] = '\r';
 			str[1] = '\n';
 			str[2] = '\0';
 		} else
 			str[1] = '\0';
 
 		puts(str);
-		*usart2_rx_start = c;
+		*usart2_rx_start = str[0];
 		++usart2_rx_start;
 		if (usart2_rx_start == usart2_rx_buffer_end)
 			usart2_rx_start = usart2_rx_buffer_start;
@@ -66,15 +64,6 @@ void svc_handler(unsigned state, void *ptr)
 		++usart2_rx_end;
 		if (usart2_rx_end == usart2_rx_buffer_end)
 			usart2_rx_end = usart2_rx_buffer_start;
-	}
-}
-
-void print_str(const char *str)
-{
-	while (*str) {
-		while (!(*(USART2_SR) & USART_FLAG_TXE));
-		*(USART2_DR) = (*str & 0xFF);
-		str++;
 	}
 }
 
