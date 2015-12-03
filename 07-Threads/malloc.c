@@ -33,67 +33,69 @@ static void *sbrk(unsigned int nbytes)
 
 void *malloc(unsigned int nbytes)
 {
+    if (nbytes <= 0)
+        return NULL;
 	Header *p, *prevp;
-	unsigned int nunits;
-	void *cp;
 
-	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
+	unsigned int nunits = (nbytes - 1) / sizeof(Header) + 2;
 
-	if ((prevp = freep) == NULL) {
-		base.s.ptr = freep = prevp = &base;
+    if (freep == NULL) {
+		base.s.ptr = freep = &base;
 		base.s.size = 0;
 	}
 
-	for (p = prevp->s.ptr; ; prevp = p, p = p->s.ptr) {
-		if (p->s.size >= nunits) {
-			if (p->s.size == nunits) {
-				prevp->s.ptr = p->s.ptr;
-			} else {
-				p->s.size -= nunits;
-				p += p->s.size;
-				p->s.size = nunits;
-			}
-			freep = prevp;
-			return (void *)(p + 1);
-		}
+	for (prevp = freep, p = freep->s.ptr; p != freep; prevp = p, p = p->s.ptr) {
+        if (p->s.size > nunits) {
+            p->s.size -= nunits;
+            p += p->s.size;
+            p->s.size = nunits;
+            return (void *)(p + 1);
+        }
 
-		if (p == freep) {
-			cp = sbrk(nunits * sizeof(Header));
-			if (cp == (void *) -1) {
-				return NULL;
-			} else {
-				p = (Header *) cp;
-				p->s.size = nunits;
-				free((void *) (p + 1));
-				p = freep;
-			}
-		}
-	}
+        if (p->s.size == nunits) {
+            prevp->s.ptr = p->s.ptr;
+            return (void *)(p + 1);
+        }
+    }
+   
+	p = (Header *) sbrk(nunits * sizeof(Header));
+    if ((void *) p == (void *) -1)
+        return NULL;
+
+	p->s.ptr = NULL;
+	p->s.size = nunits;
+	return (void *)(p + 1);
 }
 
 void free(void *ap)
 {
-	Header *bp, *p;
-	bp = (Header *) ap - 1;
+    unsigned char insert = 1;
+	Header *p, *prevp;
+	Header *bp = (Header *) ap - 1;
+    if ((void *)bp < (void *)heaps || (void *)bp >= (void *)program_break)
+        return ;
 
-	for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr) {
-		if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
-			break;
-	}
+    for (prevp = freep, p = freep->s.ptr; p != freep; prevp = p, p = p->s.ptr) {
+        if (p > bp)
+            break;
+    }
 
-	if (bp + bp->s.size == p->s.ptr) {
-		bp->s.size += p->s.ptr->s.size;
-		bp->s.ptr = p->s.ptr->s.ptr;
-	} else {
-		bp->s.ptr = p->s.ptr;
-	}
+    if (bp + bp->s.size == p) {
+        bp->s.size += p->s.size;
+        bp->s.ptr = p->s.ptr;
+        prevp->s.ptr = bp;
+        insert = 0;
+    }
 
-	if (p + p->s.size == bp) {
-		p->s.size += bp->s.size;
-		p->s.ptr = bp->s.ptr;
-	} else {
-		p->s.ptr = bp;
-	}
+    if (prevp + prevp->s.size == bp) {
+        prevp->s.size += bp->s.size;
+        if (!insert)
+            prevp->s.ptr = bp->s.ptr;    
+        insert = 0;    
+    }
 
-	freep = p;
+    if (insert) {
+        prevp->s.ptr = bp;
+        bp->s.ptr = p;
+    }
 }
