@@ -5,6 +5,7 @@
 #include "threads.h"
 #include "stdio.h"
 #include "malloc.h"
+#include "string.h"
 
 char usart2_rx_buffer[USART2_RX_BUFFER_SIZE];
 char *usart2_rx_start = usart2_rx_buffer_start;
@@ -77,13 +78,29 @@ void print_str(const char *str)
 	}
 }
 
+void fibonacci(int argc, char *argv[])
+{
+	puts(argv[0]);
+	puts("\r\n");
+}
+
 void shell()
 {
+	int wait_thread = 0;
 	char *tempStr = (char *) malloc(1024 * sizeof(char));
 	while (1) {
 		puts("gali@gali-bed:/$ ");
 		getline(tempStr);
-		puts(tempStr);
+		char *command = tempStr;
+		char *name = strsep(&command, " ");
+
+		if ((strlen(name) == 3) && (strncmp(name, "fib", 3) == 0)) {
+			if ((wait_thread = thread_create(fibonacci, name, (void *) command)) == -1)
+				puts("fibonacci thread creation failed\r\n");
+			else
+				while (tasks[wait_thread].in_use);
+		} else
+			puts("Command not found!\r\n");
 	}
 	while (1);
 }

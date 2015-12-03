@@ -8,15 +8,7 @@
 #define THREAD_PSP	0xFFFFFFFD
 
 /* Thread Control Block */
-typedef struct {
-	void *stack;
-	void *orig_stack;
-	void *args;
-	void *argv;
-	uint8_t in_use;
-} tcb_t;
-
-static tcb_t tasks[MAX_TASKS];
+tcb_t tasks[MAX_TASKS];
 static int lastTask;
 static int first = 1;
 
