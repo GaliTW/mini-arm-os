@@ -73,6 +73,7 @@ void usagefault_handler(void) __attribute((weak, alias("default_handler")));
 void svc_handler(void) __attribute((weak, alias("default_handler")));
 void pendsv_handler(void) __attribute((weak, alias("default_handler")));
 void systick_handler(void) __attribute((weak, alias("default_handler")));
+void usart2_handler(void) __attribute((weak, alias("default_handler")));
 
 __attribute((section(".isr_vector")))
 uint32_t *isr_vectors[] = {
@@ -85,7 +86,8 @@ uint32_t *isr_vectors[] = {
 	[0x06] = (uint32_t *) usagefault_handler,	/* usage fault handler */
 	[0x0B] = (uint32_t *) svc_handler,		/* svc handler */
 	[0x0E] = (uint32_t *) pendsv_handler,		/* pendsv handler */
-	[0x0F] = (uint32_t *) systick_handler		/* systick handler */
+	[0x0F] = (uint32_t *) systick_handler,		/* systick handler */
+	[0x36] = (uint32_t *) usart2_handler		/* usart2 handler */
 };
 
 void rcc_clock_init(void)
