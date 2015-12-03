@@ -78,10 +78,16 @@ void print_str(const char *str)
 	}
 }
 
+extern unsigned _fibonacci(int num);
+
 void fibonacci(int argc, char *argv[])
 {
-	puts(argv[0]);
-	puts("\r\n");
+	char rst[11];
+	if (argc == 2) {
+		itostr(_fibonacci(strtoi(argv[1])), rst);
+		puts(rst);
+		puts("\r\n");
+	}
 }
 
 void shell()
