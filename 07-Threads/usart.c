@@ -1,10 +1,12 @@
 #include "os.h"
 #include "reg.h"
 #include "stdio.h"
+#include "buffer.h"
 
-char usart2_rx_buffer[USART2_RX_BUFFER_SIZE];
-char *usart2_rx_start = usart2_rx_buffer_start;
-char *usart2_rx_end = usart2_rx_buffer_start;
+void *usart_rx_buffer;
+void *stdin_buffer;
+char usart_rx_raw_buffer[BUFFER_SIZE];
+char stdin_raw_buffer[BUFFER_SIZE];
 
 void usart_init(void)
 {
@@ -23,41 +25,28 @@ void usart_init(void)
 	*(USART2_CR3) = 0x00000000;
 	*(USART2_CR1) |= 0x2000;
 	*(USART2_CR1) |= 0x20;
+
+	usart_rx_buffer = buf_init(usart_rx_raw_buffer, sizeof(char), BUFFER_SIZE);
+	stdin = stdin_buffer = buf_init(stdin_raw_buffer, sizeof(char), BUFFER_SIZE);
 }
 
 void usart2_handler()
 {
-	char str[3];
+	char c;
 	while (*(USART2_SR) & USART_FLAG_RXNE) {
-		str[0] = *USART2_DR & 0xff;
-		if (str[0] == '\r') {
-			str[1] = '\n';
-			str[2] = '\0';
-		} else
-			str[1] = '\0';
-
-		puts(str);
-		*usart2_rx_start = str[0];
-		++usart2_rx_start;
-		if (usart2_rx_start == usart2_rx_buffer_end)
-			usart2_rx_start = usart2_rx_buffer_start;
-
-		if (usart2_rx_start == usart2_rx_end) {
-			++usart2_rx_end;
-			if (usart2_rx_end == usart2_rx_buffer_end)
-				usart2_rx_end = usart2_rx_buffer_start;
+		c = *USART2_DR & 0xff;
+		if (c == '\r' || c == '\n') {
+			buf_push_front(&c, usart_rx_buffer);
+			buf_copy_front(usart_rx_buffer, stdin_buffer);
+			putsln("");
+		} else if (c == '\b' || c == (char)127) {
+			if (buf_get_front(&c, usart_rx_buffer) == 1)
+				puts("\b \b");
+		} else {
+			buf_push_front(&c, usart_rx_buffer);
+			putchar(c);
+			if (buf_full(usart_rx_buffer))
+				buf_copy_front(usart_rx_buffer, stdin_buffer);
 		}
-	}
-
-}
-
-void svc_handler(unsigned state, void *ptr)
-{
-	if (state == 1) {
-		char *str = (char *) ptr;
-		*str = *usart2_rx_end;
-		++usart2_rx_end;
-		if (usart2_rx_end == usart2_rx_buffer_end)
-			usart2_rx_end = usart2_rx_buffer_start;
 	}
 }

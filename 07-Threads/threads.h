@@ -17,5 +17,6 @@ typedef struct {
 } tcb_t;
 
 extern tcb_t tasks[MAX_TASKS];
+extern unsigned int stdin_key;
 
 #endif

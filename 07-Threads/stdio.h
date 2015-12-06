@@ -7,5 +7,6 @@ void putsln(const char *str);
 void putd(int value);
 unsigned getline(char *strPtr);
 
+extern void *stdin;
 
 #endif

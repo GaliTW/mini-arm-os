@@ -3,7 +3,6 @@
 
 void usart_init(void);
 void usart2_handler();
-void svc_handler(unsigned state, void *ptr);
 
 extern void *stdin_buffer;
 #endif

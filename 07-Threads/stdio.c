@@ -1,6 +1,9 @@
 #include "os.h"
 #include "reg.h"
 #include "string.h"
+#include "buffer.h"
+
+void *stdin;
 
 void putchar(char c)
 {
@@ -39,19 +42,15 @@ unsigned getline(char *strPtr)
 {
 	unsigned i = 0;
 	while (1) {
-		if (usart2_rx_end != usart2_rx_start) {
-			asm volatile("push {r0-r1}\n");
-			asm volatile("mov r0, %0\n" : : "r"(1));
-			asm volatile("mov r1, %0\n" : : "r"(strPtr));
-			asm volatile("svc 0\n");
-			asm volatile("pop {r0-r1}\n");
-
-			if (*strPtr == '\r' || *strPtr == '\n') {
+		if (buf_get_back(strPtr, stdin) == 1) {
+			if (*strPtr == '\n' || *strPtr == '\r') {
+				if (*strPtr == '\r' && *buf_seek_back(stdin) == '\n')
+					buf_get_back(strPtr, stdin);
 				*strPtr = '\0';
 				break;
 			}
-			strPtr++;
-			i++;
+			++strPtr;
+			++i;
 		}
 	}
 	return i;

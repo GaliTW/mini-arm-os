@@ -46,8 +46,11 @@ void shell()
 		if (size == 3 && (strncmp(name, "fib", 3) == 0)) {
 			if ((wait_thread = thread_create(fibonacci, name, (void *) command)) == -1)
 				putsln("fibonacci thread creation failed");
-			else
+			else {
+				stdin_key = wait_thread;
 				while (tasks[wait_thread].in_use);
+				stdin_key = 0;
+			}
 		} else
 			putsln("Command not found!");
 	}

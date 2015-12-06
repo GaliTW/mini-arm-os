@@ -4,6 +4,8 @@
 #include "malloc.h"
 #include "reg.h"
 #include "string.h"
+#include "stdio.h"
+#include "usart.h"
 
 #define THREAD_PSP	0xFFFFFFFD
 
@@ -11,6 +13,8 @@
 tcb_t tasks[MAX_TASKS];
 static int lastTask;
 static int first = 1;
+
+unsigned int stdin_key = 0;
 
 /* FIXME: Without naked attribute, GCC will corrupt r7 which is used for stack
  * pointer. If so, after restoring the tasks' context, we will get wrong stack
@@ -30,6 +34,12 @@ void __attribute__((naked)) pendsv_handler()
 		if (lastTask == MAX_TASKS)
 			lastTask = 0;
 		if (tasks[lastTask].in_use) {
+			/* connect uart_rx channel to thread stdin channel */
+			if (stdin_key == lastTask)
+				stdin = stdin_buffer;
+			else
+				stdin = NULL;
+
 			/* Move the task's stack pointer address into r0 */
 			asm volatile("mov r0, %0\n" : : "r"(tasks[lastTask].stack));
 			/* Restore the new task's context and jump to the task */
