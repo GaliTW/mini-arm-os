@@ -105,7 +105,8 @@ int thread_create(void (*run)(int, char *[]), char *name, void *userdata)
 
 	argv_buffer[0] = args_buffer;
 	while (args != NULL && ((argv_buffer[argc] = strsep(&args, " ")) != NULL))
-		argc++;
+        if (strlen(argv_buffer[argc]) > 0)
+    		argc++;
 
 	/* Create the stack */
 	tasks[threadId].orig_stack = stack;
