@@ -12,12 +12,12 @@ extern unsigned _fibonacci(int num);
 
 void fibonacci(int argc, char *argv[])
 {
-	char rst[11];
-	if (argc == 2) {
-		itostr(_fibonacci(strtoi(argv[1])), rst);
-		puts(rst);
-		puts("\r\n");
-	}
+	if (argc == 2) 
+		putd(_fibonacci(strtoi(argv[1])));
+    else
+        putd(0);
+
+	putsln("");
 }
 
 void shell()
@@ -32,11 +32,11 @@ void shell()
 
 		if ((strlen(name) == 3) && (strncmp(name, "fib", 3) == 0)) {
 			if ((wait_thread = thread_create(fibonacci, name, (void *) command)) == -1)
-				puts("fibonacci thread creation failed\r\n");
+				putsln("fibonacci thread creation failed");
 			else
 				while (tasks[wait_thread].in_use);
 		} else
-			puts("Command not found!\r\n");
+			putsln("Command not found!");
 	}
 	while (1);
 }
@@ -52,7 +52,7 @@ int main(void)
 	usart_init();
 
 	if (thread_create(shell, "shell", NULL) == -1)
-		puts("shell thread creation failed\r\n");
+		putsln("shell thread creation failed");
 
 	/* SysTick configuration */
 	*SYSTICK_LOAD = (CPU_CLOCK_HZ / TICK_RATE_HZ) - 1UL;

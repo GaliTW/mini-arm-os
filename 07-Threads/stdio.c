@@ -1,5 +1,12 @@
 #include "os.h"
 #include "reg.h"
+#include "string.h"
+
+void putchar(char c)
+{
+	while (!(*(USART2_SR) & USART_FLAG_TXE));
+	*(USART2_DR) = (c & 0xFF);
+}
 
 void puts(const char *str)
 {
@@ -8,6 +15,24 @@ void puts(const char *str)
 		*(USART2_DR) = (*str & 0xFF);
 		str++;
 	}
+}
+
+void putsln(const char *str)
+{
+	while (*str) {
+		while (!(*(USART2_SR) & USART_FLAG_TXE));
+		*(USART2_DR) = (*str & 0xFF);
+		str++;
+	}
+    putchar('\r');
+    putchar('\n');
+}
+
+void putd(int value)
+{
+    char tmp[12];
+    itostr(value, tmp);
+    puts(tmp);
 }
 
 unsigned getline(char *strPtr)
