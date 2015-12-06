@@ -151,6 +151,6 @@ void thread_self_terminal()
 	thread_kill(lastTask);
 	asm volatile("cpsie i\n");
 
-	/* And now wait for death to kick in */
-	while (1);
+	/* after kill, enforce to context switch */
+	*SCB_ICSR |= SCB_ICSR_PENDSVSET;
 }
