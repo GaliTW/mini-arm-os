@@ -7,6 +7,7 @@
 #include "malloc.h"
 #include "string.h"
 #include "usart.h"
+#include "buffer.h"
 
 extern unsigned _fibonacci(int num);
 
