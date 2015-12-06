@@ -30,6 +30,7 @@ void shell()
 	while (1) {
 		puts("gali@gali-bed:/$ ");
 		getline(tempStr);
+		buf_clear(stdin);
 		while (*tempStr) {
 			if (*tempStr == ' ')
 				++tempStr;
