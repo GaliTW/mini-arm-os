@@ -12,37 +12,37 @@ extern unsigned _fibonacci(int num);
 
 void fibonacci(int argc, char *argv[])
 {
-	if (argc == 2) 
+	if (argc == 2)
 		putd(_fibonacci(strtoi(argv[1])));
-    else
-        putd(0);
+	else
+		putd(0);
 
 	putsln("");
 }
 
 void shell()
 {
-    int size;
-    char *name;
-    char *command;
+	int size;
+	char *name;
+	char *command;
 	int wait_thread = 0;
 	char *tempStr = (char *) malloc(256 * sizeof(char));
 	while (1) {
 		puts("gali@gali-bed:/$ ");
 		getline(tempStr);
-        while (*tempStr) {
-            if (*tempStr == ' ')
-                ++tempStr;
-            else
-                break;
-        }
+		while (*tempStr) {
+			if (*tempStr == ' ')
+				++tempStr;
+			else
+				break;
+		}
 
-        command = tempStr;
-        name = strsep(&command, " ");
-        size = strlen(name);
+		command = tempStr;
+		name = strsep(&command, " ");
+		size = strlen(name);
 
-        if (size == 0)
-            continue;
+		if (size == 0)
+			continue;
 		if (size == 3 && (strncmp(name, "fib", 3) == 0)) {
 			if ((wait_thread = thread_create(fibonacci, name, (void *) command)) == -1)
 				putsln("fibonacci thread creation failed");

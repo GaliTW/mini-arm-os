@@ -24,15 +24,15 @@ void putsln(const char *str)
 		*(USART2_DR) = (*str & 0xFF);
 		str++;
 	}
-    putchar('\r');
-    putchar('\n');
+	putchar('\r');
+	putchar('\n');
 }
 
 void putd(int value)
 {
-    char tmp[12];
-    itostr(value, tmp);
-    puts(tmp);
+	char tmp[12];
+	itostr(value, tmp);
+	puts(tmp);
 }
 
 unsigned getline(char *strPtr)
