@@ -6,11 +6,17 @@ CFLAGS = -fno-common -ffreestanding -O0 -std=gnu99 \
 	 -mcpu=cortex-m3 -mthumb \
 	 -Wl,-Tos.ld -nostartfiles \
 
+SRC = os.c startup.c malloc.c threads.c stdio.c string.c fibonacci.s buffer.c usart.c romfs.c
 TARGET = os.bin
 all: $(TARGET)
 
-$(TARGET): os.c startup.c malloc.c threads.c stdio.c string.c fibonacci.s buffer.c usart.c
-	$(CC) $(CFLAGS) $^ -o os.elf
+gfs.o: tools/mkgfs.c
+	@gcc -Wall -o mkgfs.o tools/mkgfs.c
+	@./mkgfs.o rom-dir gfs.bin
+	$(CROSS_COMPILE)objcopy -Ibinary -Oelf32-littlearm -Barm --prefix-sections '.romfs' gfs.bin gfs.o
+
+$(TARGET): $(SRC) gfs.o
+	$(CC) $(CFLAGS) $(SRC) gfs.o -o os.elf
 	$(CROSS_COMPILE)objcopy -Obinary os.elf os.bin
 	$(CROSS_COMPILE)objdump -S os.elf > os.list
 

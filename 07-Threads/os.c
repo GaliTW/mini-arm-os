@@ -8,6 +8,7 @@
 #include "string.h"
 #include "usart.h"
 #include "buffer.h"
+#include "romfs.h"
 
 extern unsigned _fibonacci(int num);
 
@@ -21,6 +22,71 @@ void fibonacci(int argc, char *argv[])
 	putsln("");
 }
 
+void ls(const char *path)
+{
+	void *dir = opendir(path);
+	if (dir == NULL) {
+		putsln("WTF!?");
+		return;
+	}
+
+	printdir(dir);
+}
+
+void cd(const char *to_path, char *cur_path)
+{
+	void *dir;
+	char *path, *npath;
+	if (*to_path == '/') {
+		npath = path = (char *)malloc((strlen(to_path) + 1) * sizeof(char));
+		normal_path(to_path, npath);
+	} else {
+		path = (char *)malloc((2 * (strlen(to_path) + strlen(cur_path)) + 4) * sizeof(char));
+		strcpy(path, cur_path);
+		strcat(path, "/");
+		strcat(path, to_path);
+		npath = path + strlen(path) + 1;
+		normal_path(path, npath);
+	}
+
+	dir = opendir(npath);
+	if (!dir) {
+		puts(to_path);
+		puts(": ");
+		putsln("directory not found");
+	} else
+		strcpy(cur_path, npath);
+
+	free(path);
+}
+
+void cat(const char *to_path, const char *cur_path)
+{
+	void *file;
+	char *path, *npath;
+	if (*to_path == '/') {
+		npath = path = (char *)malloc((strlen(to_path) + 1) * sizeof(char));
+		normal_path(to_path, npath);
+	} else {
+		path = (char *)malloc((2 * (strlen(to_path) + strlen(cur_path)) + 4) * sizeof(char));
+		strcpy(path, cur_path);
+		strcat(path, "/");
+		strcat(path, to_path);
+		npath = path + strlen(path) + 1;
+		normal_path(path, npath);
+	}
+
+	file = openfile(npath);
+	if (!file) {
+		puts(to_path);
+		puts(": ");
+		putsln("file not found");
+	} else
+		printfile(file);
+
+	free(path);
+}
+
 void shell()
 {
 	int size;
@@ -28,10 +94,17 @@ void shell()
 	char *command;
 	int wait_thread = 0;
 	char *tempStr = (char *) malloc(256 * sizeof(char));
+	char working_directory[64] = "/";
 	while (1) {
-		puts("gali@gali-bed:/$ ");
+		puts("gali@gali-bed:");
+		puts(working_directory);
+		puts("$ ");
+
 		getline(tempStr);
+
 		buf_clear(stdin);
+
+		/* skip spaces */
 		while (*tempStr) {
 			if (*tempStr == ' ')
 				++tempStr;
@@ -53,6 +126,14 @@ void shell()
 				while (tasks[wait_thread].in_use);
 				stdin_key = 0;
 			}
+		} else if (size == 2 && (strncmp(name, "ls", 2) == 0)) {
+			ls(working_directory);
+		} else if (size == 2 && (strncmp(name, "cd", 2) == 0)) {
+			cd(command, working_directory);
+		} else if (size == 3 && (strncmp(name, "pwd", 3) == 0)) {
+			putsln(working_directory);
+		} else if (size == 3 && (strncmp(name, "cat", 3) == 0)) {
+			cat(command, working_directory);
 		} else
 			putsln("Command not found!");
 	}
@@ -68,6 +149,7 @@ void shell()
 int main(void)
 {
 	usart_init();
+	fs_init(&_sromfs);
 
 	if (thread_create(shell, "shell", NULL) == -1)
 		putsln("shell thread creation failed");
